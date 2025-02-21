@@ -13,3 +13,4 @@ dependencies:
   - setuptools_scm
   - pytest-cov
   - grayskull
+  - curl
