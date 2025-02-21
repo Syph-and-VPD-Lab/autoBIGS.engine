@@ -9,7 +9,7 @@ dependencies:
   - pytest-asyncio
   - python-build
   - conda-build
-  - twine
+  - twine==6.0.1
   - setuptools_scm
   - pytest-cov
   - grayskull
