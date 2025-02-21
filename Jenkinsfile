@@ -2,8 +2,8 @@ pipeline {
     agent {
         kubernetes {
             cloud 'rsys-devel'
-            defaultContainer 'pip'
-            inheritFrom 'pip'
+            defaultContainer 'miniforge3'
+            inheritFrom 'miniforge'
         }
     }
     stages {
