@@ -40,7 +40,7 @@ pipeline {
                     }
                     steps {
                         sh 'python -m twine upload --repository-url https://git.reslate.systems/api/packages/ydeng/pypi -u ${CREDS_USR} -p ${CREDS_PSW} --non-interactive --disable-progress-bar --verbose dist/*'
-                        sh 'curl --user ${CREDS_USR}:${CRED_PSW} --upload-file conda-bld/**/*.conda https://git.reslate.systems/api/packages/${CRED_USR}/conda/$(basename conda-bld/**/*.conda)'
+                        sh 'curl --user ${CREDS_USR}:${CREDS_PSW} --upload-file conda-bld/**/*.conda https://git.reslate.systems/api/packages/${CREDS_USR}/conda/$(basename conda-bld/**/*.conda)'
                     }
                 }
                 stage ("pypi.org") {
