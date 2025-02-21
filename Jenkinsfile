@@ -29,7 +29,7 @@ pipeline {
         }
         stage("archive") {
             steps {
-                archiveArtifacts artifacts: 'dist/*.tar.gz, dist/*.whl, conda-bld/**/*.conda, autobigs-engine/*.yaml', fingerprint: true, followSymlinks: false, onlyIfSuccessful: true
+                archiveArtifacts artifacts: 'dist/*.tar.gz, dist/*.whl, conda-bld/**/*.conda', fingerprint: true, followSymlinks: false, onlyIfSuccessful: true
             }
         }
         stage("publish") {
