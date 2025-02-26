@@ -127,7 +127,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
                 raise ValueError("Passed in no alleles.")
             result_mlst_profile = MLSTProfile(allele_set, scheme_fields_returned["ST"], scheme_fields_returned["clonal_complex"])
             if len(names_list) > 0:
-                result_mlst_profile = NamedMLSTProfile(str(tuple(names_list)), result_mlst_profile)
+                result_mlst_profile = NamedMLSTProfile(str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0], result_mlst_profile)
             return result_mlst_profile
 
     async def profile_string(self, query_sequence_strings: Iterable[Union[NamedString, str]]) -> Union[NamedMLSTProfile, MLSTProfile]:
