@@ -8,7 +8,7 @@ A python library implementing common BIGSdb MLST schemes and databases accesses 
 Briefly, this library can:
 - Import multiple `FASTA` files
 - Fetch the available BIGSdb databases that is currently live and available
-- Fetch the available BIGSdb database schemas for a given MLST database
+- Fetch the available BIGSdb database schemes for a given MLST database
 - Retrieve exact/non-exact MLST allele variant IDs based off a sequence
 - Retrieve MLST sequence type IDs based off a sequence
 - Output all results to a single CSV
