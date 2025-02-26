@@ -7,7 +7,7 @@ import pytest
 from autobigs.engine.analysis import bigsdb
 from autobigs.engine.structures import mlst
 from autobigs.engine.structures.genomics import NamedString
-from autobigs.engine.structures.mlst import Allele, MLSTProfile
+from autobigs.engine.structures.mlst import Allele, MLSTProfile, NamedMLSTProfile
 from autobigs.engine.exceptions.database import NoBIGSdbExactMatchesException, NoBIGSdbMatchesException
 from autobigs.engine.analysis.bigsdb import BIGSdbIndex, BIGSdbMLSTProfiler, RemoteBIGSdbMLSTProfiler
 
@@ -131,10 +131,20 @@ class TestBIGSdbMLSTProfiler:
         async with bigsdb.get_BIGSdb_MLST_profiler(local_db, database_api, database_name, scheme_id) as dummy_profiler:
             async for named_profile in dummy_profiler.profile_multiple_strings(generate_async_iterable(dummy_sequences)):
                 name, profile = named_profile.name, named_profile.mlst_profile
-                assert profile is not None
                 assert isinstance(profile, MLSTProfile)
                 assert profile.clonal_complex == expected_profile.clonal_complex
                 assert profile.sequence_type == expected_profile.sequence_type
+
+    async def test_bigsdb_profile_named_string_no_repeat_name(self, local_db, database_api, database_name, scheme_id, seq_path: str, feature_seqs_path: str, expected_profile: MLSTProfile, bad_profile: MLSTProfile):
+        sequence = get_first_sequence_from_fasta(seq_path)
+        async with bigsdb.get_BIGSdb_MLST_profiler(local_db, database_api, database_name, scheme_id) as dummy_profiler:
+            named_profile = await dummy_profiler.profile_string([NamedString("BX470248.1", sequence)])
+            assert isinstance(named_profile, NamedMLSTProfile)
+            name, profile = named_profile.name, named_profile.mlst_profile
+            assert isinstance(profile, MLSTProfile)
+            assert profile.clonal_complex == expected_profile.clonal_complex
+            assert profile.sequence_type == expected_profile.sequence_type
+            assert name == "BX470248.1"
 
     async def test_bigsdb_profile_multiple_strings_exactmatch_fail_second_no_stop(self, local_db, database_api, database_name, scheme_id, seq_path: str, feature_seqs_path: str, expected_profile: MLSTProfile, bad_profile: MLSTProfile):
         valid_seq = get_first_sequence_from_fasta(seq_path)

@@ -31,8 +31,20 @@ async def test_column_order_is_same_as_expected_file(dummy_alphabet_mlst_profile
         with open(output_path) as csv_handle:
             csv_reader = reader(csv_handle)
             lines = list(csv_reader)
-            target_columns = lines[4:]
+            target_columns = lines[0][3:]
             assert target_columns == sorted(target_columns)
+
+async def test_csv_writing_sample_name_not_repeated_when_single_sequence(dummy_alphabet_mlst_profile):
+    dummy_profiles = [dummy_alphabet_mlst_profile]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        output_path = path.join(temp_dir, "out.csv")
+        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path)
+        with open(output_path) as csv_handle:
+            csv_reader = reader(csv_handle)
+            lines = list(csv_reader)
+            sample_name = lines[1][0]
+            assert sample_name == "name"
+
 
 async def test_alleles_to_text_map_mapping_is_correct(dummy_alphabet_mlst_profile: NamedMLSTProfile):
     mapping = alleles_to_text_map(dummy_alphabet_mlst_profile.mlst_profile.alleles) # type: ignore
@@ -45,3 +57,4 @@ async def test_alleles_to_text_map_mapping_is_correct(dummy_alphabet_mlst_profil
     for allele_name, allele_ids in mapping.items():
         assert allele_name in expected_mapping
         assert allele_ids == expected_mapping[allele_name]
+
