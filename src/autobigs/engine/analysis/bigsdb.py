@@ -7,7 +7,7 @@ from os import path
 import os
 import shutil
 import tempfile
-from typing import Any, AsyncGenerator, AsyncIterable, Iterable, Mapping, Sequence, Set, Union
+from typing import Any, AsyncGenerator, AsyncIterable, Coroutine, Iterable, Mapping, Sequence, Set, Union
 
 from aiohttp import ClientSession, ClientTimeout
 
@@ -135,20 +135,24 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
         return await self.determine_mlst_st(alleles)
 
     async def profile_multiple_strings(self, query_named_string_groups: AsyncIterable[Iterable[NamedString]], stop_on_fail: bool = False) -> AsyncGenerator[NamedMLSTProfile, Any]:
-        tasks = []
+        tasks: list[Coroutine[Any, Any, Union[NamedMLSTProfile, MLSTProfile]]] = []
         async for named_strings in query_named_string_groups:
             tasks.append(self.profile_string(named_strings))
-            for task in asyncio.as_completed(tasks):
-                try:
-                    yield await task
-                except NoBIGSdbMatchesException as e:
-                    if stop_on_fail:
-                        raise e
-                    causal_name = e.get_causal_query_name()
-                    if causal_name is None:
-                        raise ValueError("Missing query name despite requiring names.")
-                    else:
-                        yield NamedMLSTProfile(causal_name, None)
+        for task in asyncio.as_completed(tasks):
+            named_mlst_profile = await task
+            try:
+                if isinstance(named_mlst_profile, NamedMLSTProfile):
+                    yield named_mlst_profile
+                else:
+                    raise TypeError("MLST profile is not named.")
+            except NoBIGSdbMatchesException as e:
+                if stop_on_fail:
+                    raise e
+                causal_name = e.get_causal_query_name()
+                if causal_name is None:
+                    raise ValueError("Missing query name despite requiring names.")
+                else:
+                    yield NamedMLSTProfile(causal_name, None)
 
     async def close(self):
         await self._http_client.close()

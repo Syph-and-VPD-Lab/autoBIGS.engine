@@ -102,6 +102,7 @@ class TestBIGSdbMLSTProfiler:
                     continue
                 scrambled = gene_scrambler(str(target_sequence.seq), 0.125)
                 async for partial_match in profiler.determine_mlst_allele_variants([scrambled]):
+                    assert isinstance(partial_match, Allele)
                     assert partial_match.partial_match_profile is not None
                     mlst_targets.remove(gene)
 
@@ -119,6 +120,7 @@ class TestBIGSdbMLSTProfiler:
         dummy_alleles = bad_profile.alleles
         async with bigsdb.get_BIGSdb_MLST_profiler(local_db, database_api, database_name, scheme_id) as dummy_profiler:
             mlst_profile = await dummy_profiler.determine_mlst_st(dummy_alleles)
+            assert isinstance(mlst_profile, MLSTProfile)
             assert mlst_profile.clonal_complex == "unknown"
             assert mlst_profile.sequence_type == "unknown"
 
@@ -207,5 +209,6 @@ class TestBIGSdbIndex:
             async with await bigsdb_index.build_profiler_from_seqdefdb(local, "pubmlst_bordetella_seqdef", 3) as profiler:
                 assert isinstance(profiler, BIGSdbMLSTProfiler)
                 profile = await profiler.profile_string(sequence)
+                assert isinstance(profile, MLSTProfile)
                 assert profile.clonal_complex == "ST-2 complex"
                 assert profile.sequence_type == "1"
