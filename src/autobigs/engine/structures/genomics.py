@@ -25,7 +25,7 @@ class SangerTraceData(NamedString):
     analysis_proto_settings_name: str
     analysis_rpto_settings_ver: str
     analysis_proto_xml_data: str
-    analysis_proto_xml_schema_ver: str
+    analysis_proto_xml_scheme_ver: str
     sample_comment: Union[None, str]
     capillary_machine: bool
     container_identifier: str
