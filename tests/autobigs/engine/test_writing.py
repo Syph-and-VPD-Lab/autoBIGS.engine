@@ -47,7 +47,8 @@ async def test_csv_writing_sample_name_not_repeated_when_single_sequence(dummy_a
 
 
 async def test_alleles_to_text_map_mapping_is_correct(dummy_alphabet_mlst_profile: NamedMLSTProfile):
-    mapping = alleles_to_text_map(dummy_alphabet_mlst_profile.mlst_profile.alleles) # type: ignore
+    assert dummy_alphabet_mlst_profile.mlst_profile is not None
+    mapping = alleles_to_text_map(dummy_alphabet_mlst_profile.mlst_profile.alleles)
     expected_mapping = {
         "A": "1",
         "B": "1",
@@ -58,3 +59,12 @@ async def test_alleles_to_text_map_mapping_is_correct(dummy_alphabet_mlst_profil
         assert allele_name in expected_mapping
         assert allele_ids == expected_mapping[allele_name]
 
+async def test_csv_writing_includes_asterisk_for_non_exact(dummy_alphabet_mlst_profile: NamedMLSTProfile):
+    dummy_profiles = [dummy_alphabet_mlst_profile]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        output_path = path.join(temp_dir, "out.csv")
+        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path)
+        with open(output_path) as csv_handle:
+            csv_reader = reader(csv_handle)
+            lines = list(csv_reader)
+            assert '*' in lines[1][5]
