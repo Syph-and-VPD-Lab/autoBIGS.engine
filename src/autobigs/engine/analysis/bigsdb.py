@@ -99,15 +99,18 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
                                 yield result_allele if isinstance(sequence_string, str) else (sequence_string.name, result_allele)
                         else:
                             raise NoBIGSdbMatchesException(self._database_name, self._scheme_id, sequence_string.name if isinstance(sequence_string, NamedString) else None)
-                except ConnectionResetError as e:
+                except Exception as e:
                     last_error = e
                     success = False
                     await asyncio.sleep(5) # In case the connection issue is due to rate issues
                 else:
                     success = True
             if not success and last_error is not None:
-                raise last_error
-            
+                try:
+                    raise last_error
+                except ConnectionResetError as e:
+                    yield Allele("error", "error", None)
+
     async def determine_mlst_st(self, alleles: Union[AsyncIterable[Union[Allele, tuple[str, Allele]]], Iterable[Union[Allele, tuple[str, Allele]]]]) -> Union[MLSTProfile, NamedMLSTProfile]:
         uri_path = "designations"
         allele_request_dict: dict[str, list[dict[str, str]]] = defaultdict(list)
@@ -129,24 +132,38 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
         request_json = {
             "designations": allele_request_dict
         }
-        
-        async with self._http_client.post(uri_path, json=request_json) as response:
-            response_json: dict = await response.json()
-            allele_set: Set[Allele] = set()
-            response_json.setdefault("fields", dict())
-            scheme_fields_returned: dict[str, str] = response_json["fields"]
-            scheme_fields_returned.setdefault("ST", "unknown")
-            scheme_fields_returned.setdefault("clonal_complex", "unknown")
-            scheme_exact_matches: dict = response_json["exact_matches"]
-            for exact_match_locus, exact_match_alleles in scheme_exact_matches.items():
-                allele_set.add(Allele(exact_match_locus, exact_match_alleles[0]["allele_id"], None))
-            if len(allele_set) == 0:
-                raise ValueError("Passed in no alleles.")
-            result_mlst_profile = MLSTProfile(allele_set, scheme_fields_returned["ST"], scheme_fields_returned["clonal_complex"])
-            if len(names_list) > 0:
-                result_mlst_profile = NamedMLSTProfile(str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0], result_mlst_profile)
-            return result_mlst_profile
 
+        attempts = 0
+        success = False
+        last_error = None
+        while attempts < self._retry_limit and not success:
+            try:
+                async with self._http_client.post(uri_path, json=request_json) as response:
+                    response_json: dict = await response.json()
+                    allele_set: Set[Allele] = set()
+                    response_json.setdefault("fields", dict())
+                    scheme_fields_returned: dict[str, str] = response_json["fields"]
+                    scheme_fields_returned.setdefault("ST", "unknown")
+                    scheme_fields_returned.setdefault("clonal_complex", "unknown")
+                    scheme_exact_matches: dict = response_json["exact_matches"]
+                    for exact_match_locus, exact_match_alleles in scheme_exact_matches.items():
+                        allele_set.add(Allele(exact_match_locus, exact_match_alleles[0]["allele_id"], None))
+                    if len(allele_set) == 0:
+                        raise ValueError("Passed in no alleles.")
+                    result_mlst_profile = MLSTProfile(allele_set, scheme_fields_returned["ST"], scheme_fields_returned["clonal_complex"])
+                    if len(names_list) > 0:
+                        result_mlst_profile = NamedMLSTProfile(str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0], result_mlst_profile)
+                    return result_mlst_profile
+            except Exception as e:
+                last_error = e
+                success = False
+                await asyncio.sleep(5)
+            if not success and last_error is not None:
+                try:
+                    raise last_error
+                except ConnectionResetError as e:
+                        result_mlst_profile = NamedMLSTProfile((str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0]) + ":Error", None)
+                    
     async def profile_string(self, query_sequence_strings: Iterable[Union[NamedString, str]]) -> Union[NamedMLSTProfile, MLSTProfile]:
         alleles = self.determine_mlst_allele_variants(query_sequence_strings)
         return await self.determine_mlst_st(alleles)
