@@ -48,7 +48,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
         self._database_name = database_name
         self._scheme_id = scheme_id
         self._base_url = f"{database_api}/db/{self._database_name}/schemes/{self._scheme_id}/"
-        self._http_client = ClientSession(self._base_url, timeout=ClientTimeout(60))
+        self._http_client = ClientSession(self._base_url, timeout=ClientTimeout(300))
 
     async def __aenter__(self):
         return self
