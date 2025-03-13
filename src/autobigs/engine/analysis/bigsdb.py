@@ -9,7 +9,7 @@ import shutil
 import tempfile
 from typing import Any, AsyncGenerator, AsyncIterable, Coroutine, Iterable, Mapping, Sequence, Set, Union
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, ServerDisconnectedError
 
 from autobigs.engine.reading import read_fasta
 from autobigs.engine.structures.alignment import PairwiseAlignment
@@ -64,6 +64,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
             success = False
             last_error = None
             while not success and attempts < self._retry_limit:
+                attempts += 1
                 request = self._http_client.post(uri_path, json={
                     "sequence": sequence_string if isinstance(sequence_string, str) else sequence_string.sequence,
                     "partial_matches": True
@@ -99,7 +100,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
                                 yield result_allele if isinstance(sequence_string, str) else (sequence_string.name, result_allele)
                         else:
                             raise NoBIGSdbMatchesException(self._database_name, self._scheme_id, sequence_string.name if isinstance(sequence_string, NamedString) else None)
-                except Exception as e:
+                except ConnectionError|ServerDisconnectedError as e: # Errors we will retry
                     last_error = e
                     success = False
                     await asyncio.sleep(5) # In case the connection issue is due to rate issues
@@ -108,7 +109,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
             if not success and last_error is not None:
                 try:
                     raise last_error
-                except ConnectionResetError as e:
+                except ConnectionError|ServerDisconnectedError as e: # Non-fatal errors
                     yield Allele("error", "error", None)
 
     async def determine_mlst_st(self, alleles: Union[AsyncIterable[Union[Allele, tuple[str, Allele]]], Iterable[Union[Allele, tuple[str, Allele]]]]) -> Union[MLSTProfile, NamedMLSTProfile]:
@@ -137,6 +138,7 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
         success = False
         last_error = None
         while attempts < self._retry_limit and not success:
+            attempts += 1
             try:
                 async with self._http_client.post(uri_path, json=request_json) as response:
                     response_json: dict = await response.json()
@@ -154,15 +156,19 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
                     if len(names_list) > 0:
                         result_mlst_profile = NamedMLSTProfile(str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0], result_mlst_profile)
                     return result_mlst_profile
-            except Exception as e:
+            except ConnectionError|ServerDisconnectedError as e:
                 last_error = e
                 success = False
                 await asyncio.sleep(5)
-            if not success and last_error is not None:
-                try:
-                    raise last_error
-                except ConnectionResetError as e:
-                        result_mlst_profile = NamedMLSTProfile((str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0]) + ":Error", None)
+            else:
+                success = True
+        try:
+            if last_error is not None:
+                raise last_error
+        except ServerDisconnectedError|ConnectionError as e:
+                result_mlst_profile = NamedMLSTProfile((str(tuple(names_list)) if len(set(names_list)) > 1 else names_list[0]) + ":Error", None)
+        raise ValueError("Last error was not recorded.")
+
                     
     async def profile_string(self, query_sequence_strings: Iterable[Union[NamedString, str]]) -> Union[NamedMLSTProfile, MLSTProfile]:
         alleles = self.determine_mlst_allele_variants(query_sequence_strings)
