@@ -36,7 +36,9 @@ pipeline {
             parallel {
                 stage ("git.reslate.systems") {
                     when {
-                        branch '**/main'
+                        not {
+                            tag '*.*.*'
+                        }
                     }
 
                     environment {
@@ -49,7 +51,7 @@ pipeline {
                 }
                 stage ("pypi.org") {
                     when {
-                        tag '*.*'
+                        tag '*.*.*'
                     }
                     environment {
                         TOKEN = credentials('pypi.org')
