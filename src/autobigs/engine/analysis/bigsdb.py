@@ -43,12 +43,13 @@ class BIGSdbMLSTProfiler(AbstractAsyncContextManager):
 
 class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
 
-    def __init__(self, database_api: str, database_name: str, scheme_id: int, retry_requests: int = 5):
+    def __init__(self, database_api: str, database_name: str, scheme_id: int, retry_requests: int = 5, timeout: int = 600):
+        self._timeout = timeout
         self._retry_limit = retry_requests
         self._database_name = database_name
         self._scheme_id = scheme_id
         self._base_url = f"{database_api}/db/{self._database_name}/schemes/{self._scheme_id}/"
-        self._http_client = ClientSession(self._base_url, timeout=ClientTimeout(300))
+        self._http_client = ClientSession(self._base_url, timeout=ClientTimeout(timeout))
 
     async def __aenter__(self):
         return self
