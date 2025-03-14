@@ -27,7 +27,7 @@ async def test_column_order_is_same_as_expected_file(dummy_alphabet_mlst_profile
     dummy_profiles = [dummy_alphabet_mlst_profile]
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = path.join(temp_dir, "out.csv")
-        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path)
+        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path, ["A", "D", "B", "C"])
         with open(output_path) as csv_handle:
             csv_reader = reader(csv_handle)
             lines = list(csv_reader)
@@ -38,7 +38,7 @@ async def test_csv_writing_sample_name_not_repeated_when_single_sequence(dummy_a
     dummy_profiles = [dummy_alphabet_mlst_profile]
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = path.join(temp_dir, "out.csv")
-        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path)
+        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path, ["A", "D", "B", "C"])
         with open(output_path) as csv_handle:
             csv_reader = reader(csv_handle)
             lines = list(csv_reader)
@@ -63,7 +63,7 @@ async def test_csv_writing_includes_asterisk_for_non_exact(dummy_alphabet_mlst_p
     dummy_profiles = [dummy_alphabet_mlst_profile]
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = path.join(temp_dir, "out.csv")
-        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path)
+        await write_mlst_profiles_as_csv(iterable_to_asynciterable(dummy_profiles), output_path, ["A", "D", "B", "C"])
         with open(output_path) as csv_handle:
             csv_reader = reader(csv_handle)
             lines = list(csv_reader)

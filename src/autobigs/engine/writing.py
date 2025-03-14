@@ -1,7 +1,7 @@
 from collections import defaultdict
 import csv
 from os import PathLike
-from typing import AsyncIterable, Collection, Mapping, Sequence, Union
+from typing import AsyncIterable, Collection, Iterable, Mapping, Sequence, Union
 
 from autobigs.engine.structures.mlst import Allele, MLSTProfile, NamedMLSTProfile
 
@@ -17,7 +17,7 @@ def alleles_to_text_map(alleles: Collection[Allele]) -> Mapping[str, Union[Seque
             result[locus] = tuple(result[locus]) # type: ignore
     return dict(result)
 
-async def write_mlst_profiles_as_csv(mlst_profiles_iterable: AsyncIterable[NamedMLSTProfile], handle: Union[str, bytes, PathLike[str], PathLike[bytes]]) -> Sequence[str]:
+async def write_mlst_profiles_as_csv(mlst_profiles_iterable: AsyncIterable[NamedMLSTProfile], handle: Union[str, bytes, PathLike[str], PathLike[bytes]], allele_names: Iterable[str]) -> Sequence[str]:
     failed = list()
     with open(handle, "w", newline='') as filehandle:
         header = None
@@ -30,7 +30,7 @@ async def write_mlst_profiles_as_csv(mlst_profiles_iterable: AsyncIterable[Named
                 continue
             allele_mapping = alleles_to_text_map(mlst_profile.alleles)
             if writer is None:
-                header = ["id", "st", "clonal-complex", *sorted(allele_mapping.keys())]
+                header = ["id", "st", "clonal-complex", *sorted(allele_names)]
                 writer = csv.DictWriter(filehandle, fieldnames=header)
                 writer.writeheader()
             row_dictionary = {

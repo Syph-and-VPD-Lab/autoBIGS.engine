@@ -251,6 +251,16 @@ class BIGSdbIndex(AbstractAsyncContextManager):
 
     async def build_profiler_from_seqdefdb(self, local: bool, dbseqdef_name: str, scheme_id: int) -> BIGSdbMLSTProfiler:
         return get_BIGSdb_MLST_profiler(local, await self.get_bigsdb_api_from_seqdefdb(dbseqdef_name), dbseqdef_name, scheme_id)
+    
+    async def get_scheme_loci(self, dbseqdef_name: str, scheme_id: int) -> list[str]:
+        uri_path = f"{await self.get_bigsdb_api_from_seqdefdb(dbseqdef_name)}/db/{dbseqdef_name}/schemes/{scheme_id}"
+        async with self._http_client.get(uri_path) as response:
+            response_json = await response.json()
+            loci = response_json["loci"]
+            results = []
+            for locus in loci:
+                results.append(path.basename(locus))
+            return results
 
     async def close(self):
         await self._http_client.close()

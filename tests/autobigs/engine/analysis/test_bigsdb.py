@@ -222,3 +222,12 @@ class TestBIGSdbIndex:
                 assert isinstance(profile, MLSTProfile)
                 assert profile.clonal_complex == "ST-2 complex"
                 assert profile.sequence_type == "1"
+
+
+    @pytest.mark.parametrize(["bigsdb_name", "scheme_id", "expected"], [
+        ("pubmlst_bordetella_seqdef", 3, ["adk", "fumC", "glyA", "tyrB", "icd", "pepA", "pgm"])
+    ])
+    async def test_bigsdb_index_fetches_loci_names(self, bigsdb_name, scheme_id, expected):
+        async with BIGSdbIndex() as bigsdb_index:
+            loci = await bigsdb_index.get_scheme_loci(bigsdb_name, scheme_id)
+            assert set(loci) == set(expected)
