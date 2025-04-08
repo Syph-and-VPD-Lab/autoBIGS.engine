@@ -7,7 +7,7 @@ class BIGSDbDatabaseAPIException(Exception):
 class NoBIGSdbMatchesException(BIGSDbDatabaseAPIException):
     def __init__(self, database_name: str, database_scheme_id: int, query_name: Union[None, str], *args):
         self._query_name = query_name
-        super().__init__(f"No matches found with scheme with ID {database_scheme_id}  in the database \"{database_name}\".", *args)
+        super().__init__(f"No matches found with scheme with ID {database_scheme_id} in the database \"{database_name}\".", *args)
     
     def get_causal_query_name(self) -> Union[str, None]:
         return self._query_name
