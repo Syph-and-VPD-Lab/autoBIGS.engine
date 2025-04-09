@@ -15,7 +15,7 @@ from autobigs.engine.reading import read_fasta
 from autobigs.engine.structures.alignment import PairwiseAlignment
 from autobigs.engine.structures.genomics import NamedString
 from autobigs.engine.structures.mlst import Allele, NamedMLSTProfile, AlignmentStats, MLSTProfile
-from autobigs.engine.exceptions.database import NoBIGSdbExactMatchesException, NoBIGSdbMatchesException, NoSuchBIGSdbDatabaseException
+from autobigs.engine.exceptions.database import BIGSdbResponseNotOkay, NoBIGSdbExactMatchesException, NoBIGSdbMatchesException, NoSuchBIGSdbDatabaseException
 
 from Bio.Align import PairwiseAligner
 
@@ -99,7 +99,10 @@ class RemoteBIGSdbMLSTProfiler(BIGSdbMLSTProfiler):
                                 )
                                 yield result_allele if isinstance(sequence_string, str) else (sequence_string.name, result_allele)
                         else:
-                            raise NoBIGSdbMatchesException(self._database_name, self._scheme_id, sequence_string.name if isinstance(sequence_string, NamedString) else None)
+                            if response.status == 200:
+                                raise NoBIGSdbMatchesException(self._database_name, self._scheme_id, sequence_string.name if isinstance(sequence_string, NamedString) else None)
+                            else:
+                                raise BIGSdbResponseNotOkay(sequence_response)
                 except (ConnectionError, ServerDisconnectedError, ClientOSError) as e: # Errors we will retry
                     last_error = e
                     success = False

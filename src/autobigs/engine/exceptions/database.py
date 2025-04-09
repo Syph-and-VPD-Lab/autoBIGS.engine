@@ -3,6 +3,8 @@ from typing import Union
 class BIGSDbDatabaseAPIException(Exception):
     pass
 
+class BIGSdbResponseNotOkay(BIGSDbDatabaseAPIException):
+    pass
 
 class NoBIGSdbMatchesException(BIGSDbDatabaseAPIException):
     def __init__(self, database_name: str, database_scheme_id: int, query_name: Union[None, str], *args):
